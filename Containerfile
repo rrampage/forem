@@ -1,5 +1,7 @@
 FROM quay.io/forem/ruby:2.7.1
 
+ARG RAILS_ENV
+
 USER root
 
 RUN curl -sL https://dl.yarnpkg.com/rpm/yarn.repo -o /etc/yum.repos.d/yarn.repo && \
@@ -8,6 +10,9 @@ RUN curl -sL https://dl.yarnpkg.com/rpm/yarn.repo -o /etc/yum.repos.d/yarn.repo 
                    postgresql postgresql-devel ruby-devel tzdata yarn \
                    && dnf -y clean all \
                    && rm -rf /var/cache/yum
+
+RUN if [ "$RAILS_ENV" = "test" ] ; then dnf install https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm -y && \
+				        dnf -y --enablerepo google-chrome install google-chrome-stable && yum clean all && : ; fi
 
 ENV APP_USER=forem
 ENV APP_UID=1000
@@ -49,7 +54,10 @@ RUN mkdir -p "${APP_HOME}"/public/{assets,images,packs,podcasts,uploads}
 
 COPY . "${APP_HOME}"/
 
-RUN RAILS_ENV=production NODE_ENV=production bundle exec rake assets:precompile
+RUN if [ "$RAILS_ENV" != "test" ] ; then RAILS_ENV=production NODE_ENV=production bundle exec rake assets:precompile ; fi
+
+RUN yarn install --frozen-lockfile
+RUN bundle exec rails webpacker:compile
 
 RUN echo $(date -u +'%Y-%m-%dT%H:%M:%SZ') >> "${APP_HOME}"/FOREM_BUILD_DATE && \
     echo $(git rev-parse --short HEAD) >> "${APP_HOME}"/FOREM_BUILD_SHA && \

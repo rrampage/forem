@@ -1,0 +1,119 @@
+version: "3"
+services:
+  rails:
+    build:
+      context: .
+      args:
+        - RAILS_ENV=test
+    image: forem-test:latest
+    container_name: forem_rails
+    volumes:
+      - ./tmp/screenshots:/opt/apps/forem/tmp/screenshots
+    ports:
+      - "3000:3000"
+    depends_on:
+      - bundle
+      - db
+      - elasticsearch
+      - redis
+#      - yarn
+    environment:
+      RAILS_ENV: test
+      DATABASE_URL: postgresql://forem:forem@db:5432/PracticalDeveloper_test
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      REDIS_URL: redis://redis:6379
+      REDIS_SESSIONS_URL: redis://redis:6379
+      REDIS_SIDEKIQ_URL: redis://redis:6379
+      RACK_TIMEOUT_WAIT_TIMEOUT: 10000
+      RACK_TIMEOUT_SERVICE_TIMEOUT: 10000
+      STATEMENT_TIMEOUT: 10000
+      APP_DOMAIN: rails
+      CC_TEST_REPORTER_ID: f39e060a8b1a558ebd8aff75d5b9760bf1ae98f3f85d628ae28814f3c66438cd
+      # Dummy values needed to verify the app boots via "rails runner"
+      APP_PROTOCOL: http://
+      APP_DOMAIN: localhost:3000
+      HEROKU_APP_URL: practicaldev.herokuapp.com
+      SECRET_KEY_BASE: dummydummydummy
+      GITHUB_KEY: dummy
+      GITHUB_SECRET: dummy
+      # CI envs For Knapsack Pro
+      BUILDKITE_PARALLEL_JOB:
+      BUILDKITE_PARALLEL_JOB_COUNT:
+      BUILDKITE_COMMIT:
+      BUILDKITE_BRANCH:
+      BUILDKITE_REPO:
+      BUILDKITE_BUILD_ID:
+      BUILDKITE_BUILD_NUMBER:
+      # KnapsackPro
+      KNAPSACK_PRO_TEST_SUITE_TOKEN_RSPEC: ${KNAPSACK_PRO_TEST_SUITE_TOKEN_RSPEC}
+      KNAPSACK_PRO_FIXED_QUEUE_SPLIT: "true"
+      KNAPSACK_PRO_LOG_LEVEL: info
+      KNAPSACK_PRO_CI_NODE_TOTAL: 3
+      KNAPSACK_PRO_TEST_FILE_PATTERN: "{spec/system/user/*.rb, spec/services/rss_reader_spec.rb, spec/services/flare_tag_spec.rb}"
+      COVERAGE_REPORTS_TOTAL: 4
+    entrypoint: ["dockerize", "-wait", "tcp://db:5432", "-wait", "http://elasticsearch:9200", "-wait", "tcp://redis:6379", "-timeout", "2700s", "./scripts/entrypoint-dev.sh"]
+
+  bundle:
+    image: forem-test:latest
+    container_name: forem_bundle
+    environment:
+      RAILS_ENV: test
+    entrypoint: ["bash"]
+    command: ["./scripts/bundle.sh"]
+
+  # webpacker:
+  #   image: forem-test:latest
+  #   container_name: forem_webpacker
+  #   depends_on:
+  #     - rails
+  #     - yarn
+  #   environment:
+  #     RAILS_ENV: test
+  #     REDIS_SIDEKIQ_URL: redis://redis:6379
+  #     DATABASE_URL: postgresql://forem:forem@db:5432/PracticalDeveloper_test
+  #     ELASTICSEARCH_URL: http://elasticsearch:9200
+  #   entrypoint: ["dockerize", "-wait", "file:///opt/apps/forem/node_modules/.bin/webpack-dev-server", "-timeout", "2700s"]
+  #   command: ["./bin/webpack-dev-server"]
+
+  # yarn:
+  #   image: forem-test:latest
+  #   container_name: forem_yarn
+  #   environment:
+  #     RAILS_ENV: test
+  #   entrypoint: ["bash", "-c"]
+  #   command: ["yarn install --dev"]
+
+  db:
+    image: postgres:11-alpine
+    container_name: forem_postgresql
+    environment:
+      POSTGRES_USER: forem
+      POSTGRES_PASSWORD: forem
+      POSTGRES_DB: PracticalDeveloper_test
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: "redis"
+    container_name: forem_redis
+    ports:
+      - "6379:6379"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    container_name: forem_elasticsearch
+    environment:
+      - cluster.name=forem
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.type=single-node"
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1

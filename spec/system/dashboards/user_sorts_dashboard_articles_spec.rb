@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "Sorting Dashboard Articles", type: :system, js: true, db_strategy: :truncation do
+RSpec.describe "Sorting Dashboard Articles", type: :system, js: true, db_strategy: :deletion do
   self.use_transactional_tests = false
 
   let(:user) { create(:user) }

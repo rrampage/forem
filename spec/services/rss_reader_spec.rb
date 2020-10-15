@@ -1,7 +1,7 @@
 require "rails_helper"
 require "rss"
 
-RSpec.describe RssReader, type: :service, vcr: true, db_strategy: :truncation do
+RSpec.describe RssReader, type: :service, vcr: true, db_strategy: :deletion do
   self.use_transactional_tests = false
 
   let(:link) { "https://medium.com/feed/@vaidehijoshi" }
