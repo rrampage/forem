@@ -90,7 +90,7 @@ gem "rss", "~> 0.2.9" # Ruby's standard library for RSS
 # We need to investigate why exactly, in the meantime we are hardcoding these two transitive dependencies
 # (added by redis-rails) to keep them at the latest working version
 gem "redis-actionpack", "5.1.0" # Redis session store for ActionPack. Used for storing the Rails session in Redis.
-gem "redis-rack", "2.0.6" # Redis Store for Rack applications
+gem "redis-rack", "2.1.3" # Redis Store for Rack applications
 
 gem "redis-rails", "~> 5.0.2" # Redis for Ruby on Rails
 gem "request_store", "~> 1.5" # RequestStore gives you per-request global storage
